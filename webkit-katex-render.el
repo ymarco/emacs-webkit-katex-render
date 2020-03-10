@@ -381,8 +381,8 @@
 
 (defun webkit-katex-render-update ()
   (let* ((math-at-point (webkit-katex-render--math-at-point))
-        (pos (car math-at-point))
-        (math (cdr math-at-point)))
+         (pos (car math-at-point))
+         (math (cdr math-at-point)))
     (if math
         (if (not (eq math webkit-katex-render--previous-math))
             (progn
@@ -390,6 +390,16 @@
               ;; (webkit-katex-render--resize)
               (setq webkit-katex-render--previous-math math)))
       (webkit-katex-render-hide))))
+
+(defvar webkit-katex-render-idle-delay 0.3
+  "Idle delay to wait before activating the preview.
+
+Can be in seconds, or any other format that `run-with-idle-timer' accepts.")
+
+(defvar-local webkit-katex-render--idle-timer nil
+  "Timer object, stored to manage the idle delay timer.
+
+The actual timer is configured by `webkit-katex-render-idle-delay'")
 
 ;;;###autoload
 (define-minor-mode webkit-katex-render-mode
@@ -401,10 +411,12 @@
           (user-error "Your Emacs was not compiled with xwidgets support"))
         (unless (display-graphic-p)
           (user-error "webkit-katex-render only works in graphical displays"))
-        (add-hook 'post-self-insert-hook #'webkit-katex-render--resize nil t)
-        (add-hook 'post-command-hook #'webkit-katex-render-update nil t))
-    (remove-hook 'post-command-hook #'webkit-katex-render-update t)
-    (remove-hook 'post-self-insert-hook #'webkit-katex-render--resize t)
+        (setq webkit-katex-render--idle-timer
+              (run-with-idle-timer webkit-katex-render-idle-delay t
+                                   (lambda ()
+                                     (webkit-katex-render-update)
+                                     (webkit-katex-render--resize)))))
+    (cancel-timer webkit-katex-render--idle-timer)
     (webkit-katex-render-cleanup)))
 
 (provide 'webkit-katex-render)
