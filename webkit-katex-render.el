@@ -384,11 +384,10 @@
          (pos (car math-at-point))
          (math (cdr math-at-point)))
     (if math
-        (if (not (eq math webkit-katex-render--previous-math))
-            (progn
-              (webkit-katex-render-show math-at-point)
-              ;; (webkit-katex-render--resize)
-              (setq webkit-katex-render--previous-math math)))
+        (when (not (equal math webkit-katex-render--previous-math))
+          (webkit-katex-render-show math-at-point)
+          ;; (webkit-katex-render--resize)
+          (setq webkit-katex-render--previous-math math))
       (webkit-katex-render-hide))))
 
 (defvar webkit-katex-render-idle-delay 0.3
